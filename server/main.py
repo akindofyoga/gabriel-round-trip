@@ -1,11 +1,17 @@
+#!/usr/bin/env python3
+
 from gabriel_server import cognitive_engine
 from gabriel_protocol import gabriel_pb2
 from gabriel_server import local_engine
 import numpy as np
 import cv2
+import logging
 
 
 SOURCE = 'roundtrip'
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 class SandwichEngine(cognitive_engine.Engine):
@@ -18,9 +24,18 @@ class SandwichEngine(cognitive_engine.Engine):
         img = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
         img = np.rot90(img, 3)
 
-        cv2.imwrite('output.jpg', img)
+        _, jpeg_img = cv2.imencode(".jpg", img)
+        img_data = jpeg_img.tostring()
 
-        raise Exception
+        result = gabriel_pb2.ResultWrapper.Result()
+        result.payload_type = gabriel_pb2.PayloadType.IMAGE
+        result.payload = img_data
+        
+        status = gabriel_pb2.ResultWrapper.Status.SUCCESS
+        result_wrapper = cognitive_engine.create_result_wrapper(status)
+        result_wrapper.results.append(result)
+
+        return result_wrapper
 
 
 def main():
