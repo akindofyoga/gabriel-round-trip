@@ -3,6 +3,8 @@ package edu.cmu.cs.sandwich;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.YuvImage;
 import android.os.Bundle;
@@ -10,6 +12,7 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.util.Size;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -48,7 +51,6 @@ public class GabrielActivity extends AppCompatActivity {
             Manifest.permission.CAMERA,
     };
     private static final int REQUEST_CODE_PERMISSIONS = 10;
-    private static final int ZOOM_RESULT = 1;
     private static final int WIDTH = 640;
     private static final int HEIGHT = 480;
 
@@ -56,6 +58,7 @@ public class GabrielActivity extends AppCompatActivity {
     private TextToSpeech textToSpeech;
     private ExecutorService cameraExecutor;
     private PreviewView viewFinder;
+    private ImageView imageView;
     private YuvExport yuvExport;
 
     @Override
@@ -77,10 +80,15 @@ public class GabrielActivity extends AppCompatActivity {
 
         cameraExecutor = Executors.newSingleThreadExecutor();
         viewFinder = findViewById(R.id.viewFinder);
+        imageView = findViewById(R.id.imageView);
         yuvExport = new YuvExport();
 
         Consumer<ResultWrapper> consumer = resultWrapper -> {
-            // Ignore result
+            ResultWrapper.Result result = resultWrapper.getResults(0);
+            ByteString byteString = result.getPayload();
+            Bitmap bitmap = BitmapFactory.decodeByteArray(
+                    byteString.toByteArray(), 0, byteString.size());
+            viewFinder.post(() -> imageView.setImageBitmap(bitmap));
         };
 
         Consumer<ErrorType> onDisconnect = errorType -> {
@@ -103,7 +111,7 @@ public class GabrielActivity extends AppCompatActivity {
 
                     YuvImage yuvImage = new YuvImage(yuvExport.getOutputBuffer(), ImageFormat.NV21, image.getWidth(), image.getHeight(), null);
                     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                    yuvImage.compressToJpeg(image.getCropRect(), 67, byteArrayOutputStream);
+                    yuvImage.compressToJpeg(image.getCropRect(), 100, byteArrayOutputStream);
 
                     return InputFrame.newBuilder()
                             .setPayloadType(Protos.PayloadType.IMAGE)
