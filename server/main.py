@@ -14,7 +14,7 @@ SOURCE = 'roundtrip'
 logging.basicConfig(level=logging.INFO)
 
 
-class SandwichEngine(cognitive_engine.Engine):
+class RoundTripEngine(cognitive_engine.Engine):
     def handle(self, input_frame):
         if input_frame.payload_type != gabriel_pb2.PayloadType.IMAGE:
             status = gabriel_pb2.ResultWrapper.Status.WRONG_INPUT_FORMAT
@@ -30,7 +30,7 @@ class SandwichEngine(cognitive_engine.Engine):
         result = gabriel_pb2.ResultWrapper.Result()
         result.payload_type = gabriel_pb2.PayloadType.IMAGE
         result.payload = img_data
-        
+
         status = gabriel_pb2.ResultWrapper.Status.SUCCESS
         result_wrapper = cognitive_engine.create_result_wrapper(status)
         result_wrapper.results.append(result)
@@ -40,7 +40,7 @@ class SandwichEngine(cognitive_engine.Engine):
 
 def main():
     def engine_factory():
-        return SandwichEngine()
+        return RoundTripEngine()
 
     local_engine.run(engine_factory, SOURCE, 60, 9099, 2)
 

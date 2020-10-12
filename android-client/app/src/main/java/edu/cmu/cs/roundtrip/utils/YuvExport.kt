@@ -16,12 +16,12 @@
 
 // Based On https://github.com/android/camera-samples/blob/3730442b49189f76a1083a98f3acf3f5f09222a3/CameraUtils/lib/src/main/java/com/example/android/camera/utils/YuvToRgbConverter.kt
 
-package edu.cmu.cs.sandwich.utils
+package edu.cmu.cs.roundtrip.utils
 
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.media.Image
-import edu.cmu.cs.sandwich.BuildConfig
+import edu.cmu.cs.roundtrip.BuildConfig
 
 class YuvExport {
     lateinit var outputBuffer: ByteArray

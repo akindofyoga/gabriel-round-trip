@@ -1,4 +1,4 @@
-package edu.cmu.cs.sandwich;
+package edu.cmu.cs.roundtrip;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -42,7 +42,7 @@ import edu.cmu.cs.gabriel.protocol.Protos;
 import edu.cmu.cs.gabriel.protocol.Protos.ResultWrapper;
 import edu.cmu.cs.gabriel.protocol.Protos.InputFrame;
 import edu.cmu.cs.gabriel.client.comm.ServerComm;
-import edu.cmu.cs.sandwich.utils.YuvExport;
+import edu.cmu.cs.roundtrip.utils.YuvExport;
 
 public class GabrielActivity extends AppCompatActivity {
     private static final String TAG = "GabrielActivity";
