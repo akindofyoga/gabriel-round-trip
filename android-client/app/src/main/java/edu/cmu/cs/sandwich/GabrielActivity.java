@@ -109,7 +109,8 @@ public class GabrielActivity extends AppCompatActivity {
                     yuvExport.imageToYuvBuffer(Objects.requireNonNull(image.getImage()));
 
 
-                    YuvImage yuvImage = new YuvImage(yuvExport.getOutputBuffer(), ImageFormat.NV21, image.getWidth(), image.getHeight(), null);
+                    YuvImage yuvImage = new YuvImage(yuvExport.getOutputBuffer(), ImageFormat.NV21,
+                            image.getWidth(), image.getHeight(), null);
                     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                     yuvImage.compressToJpeg(image.getCropRect(), 100, byteArrayOutputStream);
 
