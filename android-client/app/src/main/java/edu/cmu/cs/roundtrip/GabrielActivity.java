@@ -5,8 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
-import android.graphics.YuvImage;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
@@ -31,7 +30,6 @@ import com.google.protobuf.ByteString;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,7 +40,6 @@ import edu.cmu.cs.gabriel.protocol.Protos;
 import edu.cmu.cs.gabriel.protocol.Protos.ResultWrapper;
 import edu.cmu.cs.gabriel.protocol.Protos.InputFrame;
 import edu.cmu.cs.gabriel.client.comm.ServerComm;
-import edu.cmu.cs.roundtrip.utils.YuvExport;
 
 public class GabrielActivity extends AppCompatActivity {
     private static final String TAG = "GabrielActivity";
@@ -59,7 +56,10 @@ public class GabrielActivity extends AppCompatActivity {
     private ExecutorService cameraExecutor;
     private PreviewView viewFinder;
     private ImageView imageView;
-    private YuvExport yuvExport;
+
+    private YuvToRgbConverter yuvToRgbConverter;
+    private Bitmap bitmap;
+    private Matrix matrix;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,7 +81,14 @@ public class GabrielActivity extends AppCompatActivity {
         cameraExecutor = Executors.newSingleThreadExecutor();
         viewFinder = findViewById(R.id.viewFinder);
         imageView = findViewById(R.id.imageView);
-        yuvExport = new YuvExport();
+
+        yuvToRgbConverter = new YuvToRgbConverter(this);
+
+        // Height and width are switched because
+        bitmap = Bitmap.createBitmap(HEIGHT, WIDTH, Bitmap.Config.ARGB_8888);
+
+        matrix = new Matrix();
+        matrix.postRotate(180);
 
         Consumer<ResultWrapper> consumer = resultWrapper -> {
             ResultWrapper.Result result = resultWrapper.getResults(0);
@@ -105,20 +112,24 @@ public class GabrielActivity extends AppCompatActivity {
         @Override
         public void analyze(@NonNull ImageProxy image) {
             serverComm.sendSupplier(() -> {
-                synchronized (this) {
-                    yuvExport.imageToYuvBuffer(Objects.requireNonNull(image.getImage()));
+//                    YuvImage yuvImage = new YuvImage(yuvExport.getOutputBuffer(), ImageFormat.NV21,
+//                            image.getWidth(), image.getHeight(), null);
+//                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//                    yuvImage.compressToJpeg(image.getCropRect(), 100, byteArrayOutputStream);
 
+                yuvToRgbConverter.yuvToRgb(image.getImage(), bitmap);
 
-                    YuvImage yuvImage = new YuvImage(yuvExport.getOutputBuffer(), ImageFormat.NV21,
-                            image.getWidth(), image.getHeight(), null);
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                    yuvImage.compressToJpeg(image.getCropRect(), 100, byteArrayOutputStream);
+                // Rotate image. Width and height are switched because image is rotated
+                bitmap = Bitmap.createBitmap(
+                        bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());//, matrix, true);
 
-                    return InputFrame.newBuilder()
-                            .setPayloadType(Protos.PayloadType.IMAGE)
-                            .addPayloads(ByteString.copyFrom(byteArrayOutputStream.toByteArray()))
-                            .build();
-                }
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+
+                return InputFrame.newBuilder()
+                        .setPayloadType(Protos.PayloadType.IMAGE)
+                        .addPayloads(ByteString.copyFrom(byteArrayOutputStream.toByteArray()))
+                        .build();
             }, SOURCE, false);
 
             image.close();

@@ -1,5 +1,7 @@
+// From https://github.com/android/camera-samples/blob/4aac9c7763c285d387194a558416a4458f29e275/CameraUtils/lib/src/main/java/com/example/android/camera/utils/YuvToRgbConverter.kt
+
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +16,75 @@
  * limitations under the License.
  */
 
-// Based On https://github.com/android/camera-samples/blob/3730442b49189f76a1083a98f3acf3f5f09222a3/CameraUtils/lib/src/main/java/com/example/android/camera/utils/YuvToRgbConverter.kt
+package edu.cmu.cs.roundtrip
 
-package edu.cmu.cs.roundtrip.utils
-
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.media.Image
-import edu.cmu.cs.roundtrip.BuildConfig
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicYuvToRGB
+import android.renderscript.Type
 
-class YuvExport {
-    lateinit var outputBuffer: ByteArray
-        private set
+/**
+ * Helper class used to efficiently convert a [Media.Image] object from
+ * [ImageFormat.YUV_420_888] format to an RGB [Bitmap] object.
+ *
+ * The [yuvToRgb] method is able to achieve the same FPS as the CameraX image
+ * analysis use case on a Pixel 3 XL device at the default analyzer resolution,
+ * which is 30 FPS with 640x480.
+ *
+ * NOTE: This has been tested in a limited number of devices and is not
+ * considered production-ready code. It was created for illustration purposes,
+ * since this is not an efficient camera pipeline due to the multiple copies
+ * required to convert each frame.
+ */
+class YuvToRgbConverter(context: Context) {
+    private val rs = RenderScript.create(context)
+    private val scriptYuvToRgb = ScriptIntrinsicYuvToRGB.create(rs, Element.U8_4(rs))
+
     private var pixelCount: Int = -1
+    private lateinit var yuvBuffer: ByteArray
+    private lateinit var inputAllocation: Allocation
+    private lateinit var outputAllocation: Allocation
 
-    fun imageToYuvBuffer(image: Image) {
-        if (BuildConfig.DEBUG && image.format != ImageFormat.YUV_420_888) {
-            error("Assertion failed")
-        }
+    @Synchronized
+    fun yuvToRgb(image: Image, output: Bitmap) {
 
         // Ensure that the intermediate output byte buffer is allocated
-        if (!::outputBuffer.isInitialized) {
+        if (!::yuvBuffer.isInitialized) {
             pixelCount = image.cropRect.width() * image.cropRect.height()
             // Bits per pixel is an average for the whole image, so it's useful to compute the size
             // of the full buffer but should not be used to determine pixel offsets
             val pixelSizeBits = ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888)
-            outputBuffer = ByteArray(pixelCount * pixelSizeBits / 8)
+            yuvBuffer = ByteArray(pixelCount * pixelSizeBits / 8)
         }
-        outputBuffer.size
+
+        // Get the YUV data in byte array form using NV21 format
+        imageToByteArray(image, yuvBuffer)
+
+        // Ensure that the RenderScript inputs and outputs are allocated
+        if (!::inputAllocation.isInitialized) {
+            // Explicitly create an element with type NV21, since that's the pixel format we use
+            val elemType = Type.Builder(rs, Element.YUV(rs)).setYuvFormat(ImageFormat.NV21).create()
+            inputAllocation = Allocation.createSized(rs, elemType.element, yuvBuffer.size)
+        }
+        if (!::outputAllocation.isInitialized) {
+            outputAllocation = Allocation.createFromBitmap(rs, output)
+        }
+
+        // Convert NV21 format YUV to RGB
+        inputAllocation.copyFrom(yuvBuffer)
+        scriptYuvToRgb.setInput(inputAllocation)
+        scriptYuvToRgb.forEach(outputAllocation)
+        outputAllocation.copyTo(output)
+    }
+
+    private fun imageToByteArray(image: Image, outputBuffer: ByteArray) {
+        assert(image.format == ImageFormat.YUV_420_888)
 
         val imageCrop = image.cropRect
         val imagePlanes = image.planes
