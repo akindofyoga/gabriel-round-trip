@@ -112,11 +112,6 @@ public class GabrielActivity extends AppCompatActivity {
         @Override
         public void analyze(@NonNull ImageProxy image) {
             serverComm.sendSupplier(() -> {
-//                    YuvImage yuvImage = new YuvImage(yuvExport.getOutputBuffer(), ImageFormat.NV21,
-//                            image.getWidth(), image.getHeight(), null);
-//                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-//                    yuvImage.compressToJpeg(image.getCropRect(), 100, byteArrayOutputStream);
-
                 yuvToRgbConverter.yuvToRgb(image.getImage(), bitmap);
 
                 // Rotate image. Width and height are switched because image is rotated
