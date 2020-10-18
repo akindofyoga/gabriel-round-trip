@@ -84,7 +84,7 @@ public class GabrielActivity extends AppCompatActivity {
 
         yuvToRgbConverter = new YuvToRgbConverter(this);
 
-        // Height and width are switched because
+        // Height and width are switched because the image is rotated 90 degress
         bitmap = Bitmap.createBitmap(HEIGHT, WIDTH, Bitmap.Config.ARGB_8888);
 
         matrix = new Matrix();
@@ -116,7 +116,7 @@ public class GabrielActivity extends AppCompatActivity {
 
                 // Rotate image. Width and height are switched because image is rotated
                 bitmap = Bitmap.createBitmap(
-                        bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());//, matrix, true);
+                        bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
