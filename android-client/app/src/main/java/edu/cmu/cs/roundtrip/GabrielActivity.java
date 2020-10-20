@@ -107,6 +107,7 @@ public class GabrielActivity extends AppCompatActivity {
                     bitmap = Bitmap.createBitmap(
                             image.getWidth(), image.getHeight(), Bitmap.Config.ARGB_8888);
                 }
+                yuvToRgbConverter.yuvToRgb(image.getImage(), bitmap);
 
                 // Images are passed to this method without being rotated
                 Matrix matrix = new Matrix();
