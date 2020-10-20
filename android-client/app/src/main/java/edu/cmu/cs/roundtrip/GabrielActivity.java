@@ -59,7 +59,6 @@ public class GabrielActivity extends AppCompatActivity {
 
     private YuvToRgbConverter yuvToRgbConverter;
     private Bitmap bitmap;
-    private Matrix matrix;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,12 +83,6 @@ public class GabrielActivity extends AppCompatActivity {
 
         yuvToRgbConverter = new YuvToRgbConverter(this);
 
-        // Height and width are switched because the image is rotated 90 degress
-        bitmap = Bitmap.createBitmap(HEIGHT, WIDTH, Bitmap.Config.ARGB_8888);
-
-        matrix = new Matrix();
-        matrix.postRotate(180);
-
         Consumer<ResultWrapper> consumer = resultWrapper -> {
             ResultWrapper.Result result = resultWrapper.getResults(0);
             ByteString byteString = result.getPayload();
@@ -112,14 +105,23 @@ public class GabrielActivity extends AppCompatActivity {
         @Override
         public void analyze(@NonNull ImageProxy image) {
             serverComm.sendSupplier(() -> {
+                if (bitmap == null) {
+                    bitmap = Bitmap.createBitmap(
+                            image.getWidth(), image.getHeight(), Bitmap.Config.ARGB_8888);
+                }
                 yuvToRgbConverter.yuvToRgb(image.getImage(), bitmap);
 
-                // Rotate image. Width and height are switched because image is rotated
-                bitmap = Bitmap.createBitmap(
+                // Images are passed to this method without being rotated
+                Matrix matrix = new Matrix();
+                matrix.postRotate(image.getImageInfo().getRotationDegrees());
+
+                // rotatedBitmap must be its own variable because the dimensions are different
+                // from those of bitmap
+                Bitmap rotatedBitmap = Bitmap.createBitmap(
                         bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
 
                 return InputFrame.newBuilder()
                         .setPayloadType(Protos.PayloadType.IMAGE)
