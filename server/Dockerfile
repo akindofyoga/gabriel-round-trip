@@ -1,7 +1,6 @@
 FROM ubuntu:18.04
 
-# libgl1-mesa-glx  would be required if we were using opencv
-RUN apt-get update && apt-get install -y python3 python3-pip
+RUN apt-get update && apt-get install -y libgl1-mesa-glx python3 python3-pip
 
 
 COPY requirements.txt .

@@ -56,7 +56,6 @@ public class GabrielActivity extends AppCompatActivity {
     private ExecutorService cameraExecutor;
     private PreviewView viewFinder;
     private ImageView imageView;
-
     private YuvToRgbConverter yuvToRgbConverter;
     private Bitmap bitmap;
 
@@ -80,7 +79,6 @@ public class GabrielActivity extends AppCompatActivity {
         cameraExecutor = Executors.newSingleThreadExecutor();
         viewFinder = findViewById(R.id.viewFinder);
         imageView = findViewById(R.id.imageView);
-
         yuvToRgbConverter = new YuvToRgbConverter(this);
 
         Consumer<ResultWrapper> consumer = resultWrapper -> {
@@ -109,7 +107,6 @@ public class GabrielActivity extends AppCompatActivity {
                     bitmap = Bitmap.createBitmap(
                             image.getWidth(), image.getHeight(), Bitmap.Config.ARGB_8888);
                 }
-                yuvToRgbConverter.yuvToRgb(image.getImage(), bitmap);
 
                 // Images are passed to this method without being rotated
                 Matrix matrix = new Matrix();

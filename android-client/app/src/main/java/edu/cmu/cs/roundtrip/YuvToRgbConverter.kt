@@ -1,5 +1,4 @@
-// From https://github.com/android/camera-samples/blob/4aac9c7763c285d387194a558416a4458f29e275/CameraUtils/lib/src/main/java/com/example/android/camera/utils/YuvToRgbConverter.kt
-
+// From https://github.com/android/camera-samples/blob/4aac9c7763c285d387194a558416a4458f29e275/Camera2Basic/utils/src/main/java/com/example/android/camera/utils/YuvToRgbConverter.kt
 /*
  * Copyright 2020 The Android Open Source Project
  *
@@ -16,7 +15,7 @@
  * limitations under the License.
  */
 
-package edu.cmu.cs.roundtrip
+package edu.cmu.cs.roundtrip;
 
 import android.content.Context
 import android.graphics.Bitmap
